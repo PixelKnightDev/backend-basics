@@ -1,0 +1,18 @@
+export {asyncHandler}
+
+// const asyncHandler = () => {}
+// const asynHandler = (func) => {() => {}} function ke andar function
+// const async Handler = (func) => async () => {}
+
+
+
+const asyncHandler = (fn) => async (req, res, next) => {
+    try {
+        await fn(req, res, next)
+    } catch (error) {
+        res.status(err.code || 500).json({
+            success: false,
+            message: err.message
+        })
+    }
+}
