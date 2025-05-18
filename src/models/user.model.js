@@ -56,7 +56,7 @@ userSchema.pre("save", async function (next) {
     if(!this.isModified("password")){
         return next(); // if password not modified return without changing the value, because photo wagerah ya anything else update karne pe bhi password change hojayega
     }
-    this.password = bcrypt.hash(this.password, 10) // 10 - kitne round (bcrypt ka thing)
+    this.password = await bcrypt.hash(this.password, 10) // 10 - kitne round (bcrypt ka thing)
     next()
 })
 
