@@ -3,8 +3,6 @@ import { ApiError } from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { useDebugValue } from "react";
-
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -112,7 +110,7 @@ const loginUser = asyncHandler(async (req, res) => {
     // send cookies and successful response
 
     const {email, username, password} = req.body
-    if (!username || !email) {
+    if (!username && !email) {
         throw new ApiError(400, "username and email are required")
     }
 
@@ -147,7 +145,7 @@ const loginUser = asyncHandler(async (req, res) => {
             200,
             {
                 user: loggedInUser,
-                accesstoken,
+                accessToken,
                 refreshToken
             },
             "User logged in Successfully"
