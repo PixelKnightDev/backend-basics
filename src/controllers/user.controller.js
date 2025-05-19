@@ -18,7 +18,7 @@ const registerUser = asyncHandler( async (req, res) => {
 
 
     const {fullName, email, username, password} = req.body
-    console.log("email:", password);
+    //console.log("email:", password);
     //got all user data
     if (
         [fullName, email, username, password].some((field) => field?.trim() === "")
@@ -27,7 +27,7 @@ const registerUser = asyncHandler( async (req, res) => {
     }
     // you can check each by multiple if statements this code is more advanced
     // validation done
-    const existingUser = User.findOne({
+    const existingUser = await User.findOne({
         $or: [{ username }, { email }]
     })
     //console.log(req.body);
@@ -35,9 +35,17 @@ const registerUser = asyncHandler( async (req, res) => {
     if(existingUser) {
         throw new ApiError(409, "user with email or username already exists")
     }
+
+    //console.log(req.files);
+
     // checked if user exists or not
     const avatarLocalPath = req.files?.avatar[0]?.path; //multer ka feature hai
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.avatar[0].path
+    }
 
     if(!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
