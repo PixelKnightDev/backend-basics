@@ -3,7 +3,24 @@ import { ApiError } from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { useDebugValue } from "react";
 
+
+const generateAccessAndRefreshTokens = async(userId) => {
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generaterRefreshToken()
+
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false }) // because when saving in mongoose, password validity kicks in from usermodel and we dont need it here 
+             
+        return {accessToken, refreshToken}
+    } catch (error) {
+        throw new ApiError(500, "something went wrong while generating access and refresh token")
+    }
+}
 
 const registerUser = asyncHandler( async (req, res) => {
     // get user details from frontend
@@ -85,4 +102,84 @@ const registerUser = asyncHandler( async (req, res) => {
     // returned response
 
 })
-export {registerUser}
+
+const loginUser = asyncHandler(async (req, res) => {
+    // req.body se data lelo
+    // username or email kisi ek se login karwao
+    // find the user
+    // password check
+    // access and refresh token
+    // send cookies and successful response
+
+    const {email, username, password} = req.body
+    if (!username || !email) {
+        throw new ApiError(400, "username and email are required")
+    }
+
+    const user = await User.findOne({
+        $or: [{username}, {email}]
+    })
+    if(!user) {
+        throw new ApiError(404, "User does not exist")
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password)
+    // here we use user.isPasswordCorrect lowercase user not User because the method was created by us if mongoose method like findone then User but for our method use your variable
+    if(!isPasswordValid) {
+        throw new ApiError(401, "password incorrect")
+    }
+
+    const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+    const loggedInUser = await User.findById(user._id).
+    select("-password -refreshToken")
+
+    const options = {
+        httplOnly: true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user: loggedInUser,
+                accesstoken,
+                refreshToken
+            },
+            "User logged in Successfully"
+        )
+    )
+})
+
+const logoutUser = asyncHandler(async(req,res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,  // we got this because of the auth middleware, in login we take from the user by req.body but here we cant so we take from cookie using cookie parser in middleware and add it to req before reaching here.(big brain)
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        }
+    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+}
