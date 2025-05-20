@@ -291,7 +291,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Avatar image updated"))
 })
-
+// create a utility to delete the old cloudinary upload
 const updateUserCoverImage = asyncHandler(async(req, res) => {
    const coverImageLocalPath = req.file?.path 
 
