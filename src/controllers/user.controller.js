@@ -14,7 +14,6 @@ const generateAccessAndRefreshTokens = async(userId) => {
 
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false }) // because when saving in mongoose, password validity kicks in from usermodel and we dont need it here 
-             
         return {accessToken, refreshToken}
     } catch (error) {
         throw new ApiError(500, "something went wrong while generating access and refresh token")
